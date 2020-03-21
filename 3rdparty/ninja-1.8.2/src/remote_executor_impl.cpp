@@ -86,8 +86,19 @@ bool RemoteExecutor::PreprocessCode(const std::vector<std::string> &originalRule
     auto space = srcExecutable.find(' ');
     if (space != std::string::npos)
     {
-        args.insert(args.begin(), srcExecutable.substr(space + 1));
-        srcExecutable = srcExecutable.substr(0, space);
+        size_t execStartPos = 0;
+        size_t execEndPos = space;
+        if (srcExecutable[0] == '"')
+        {
+            size_t quote = srcExecutable.find("\"", 1);
+            if (quote != std::string::npos && quote > space)
+            {
+                execStartPos = 1;
+                execEndPos = quote;
+            }
+        }
+        args.insert(args.begin(), srcExecutable.substr(execEndPos + 1));
+        srcExecutable = srcExecutable.substr(execStartPos, execEndPos - execStartPos);
     }
     ToolInvocation original, pp, cc;
     original.m_id.m_toolExecutable = srcExecutable;
@@ -95,6 +106,9 @@ bool RemoteExecutor::PreprocessCode(const std::vector<std::string> &originalRule
     original.m_ignoredArgs = ignoredArgs;
     if (!m_invocationRewriter->SplitInvocation(original, pp, cc, &toolId))
         return false;
+
+    if (srcExecutable.find(" ") != std::string::npos)
+        srcExecutable = "\"" + srcExecutable + "\"";
 
     preprocessRule.push_back(srcExecutable + "  ");
     preprocessRule.insert(preprocessRule.end(), pp.m_args.begin(), pp.m_args.end());
@@ -184,8 +198,17 @@ bool RemoteExecutor::StartCommand(Edge *userData, const std::string &command)
         return false;
 
     const auto space = command.find(' ');
-    ToolInvocation invocation(command.substr(space + 1));
-    invocation.SetExecutable(command.substr(0, space));
+    size_t execStartPos = 0;
+    size_t execEndPos = space;
+    if (command[0] == '"')
+    {
+        execStartPos = 1;
+        size_t quote = command.find("\"", 1);
+        if (quote != std::string::npos)
+            execEndPos = quote;
+    }
+    ToolInvocation invocation(command.substr(execEndPos + 1));
+    invocation.SetExecutable(command.substr(execStartPos, execEndPos - execStartPos));
 
     invocation = m_invocationRewriter->CompleteInvocation(invocation);
 
