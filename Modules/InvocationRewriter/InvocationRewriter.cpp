@@ -254,9 +254,11 @@ InvocationRewriter::ToolInfo InvocationRewriter::CompileInfoByExecutable(const s
 	{
 		if (std::find(unit.m_names.cbegin(), unit.m_names.cend(), exec) != unit.m_names.cend())
 		{
+			Syslogger(Syslogger::Debug) << "CompileInfoByExecutable: " << executable << " => " << unit.m_id;
 			return CompileInfoByUnit(unit);
 		}
 	}
+	Syslogger(Syslogger::Debug) << "CompileInfoByExecutable: " << executable << " => ???";
 	return info;
 }
 
